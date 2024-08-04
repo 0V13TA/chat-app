@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f0f0f0;
+      }
+
+      .inputs {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 10px;
+        background-color: #fff;
+        border-top: 1px solid #ccc;
+        display: flex;
+      }
+
+      #text {
+        width: 80%;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+
+      #btn {
+        width: 20%;
+        padding: 10px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+        background-color: #4caf50;
+        color: #fff;
+        cursor: pointer;
+      }
+
+      #btn:hover {
+        background-color: #3e8e41;
+      }
+
+      .log-container {
+        padding: 20px;
+      }
+
+      p {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+      }
+
+      #them {
+        background-color: #add8e6;
+        border-radius: 5px;
+        padding: 10px;
+        color: #333;
+      }
+
+      #you {
+        background-color: #f0f0f0;
+        border-radius: 5px;
+        padding: 10px;
+        color: #333;
+      }
+    </style>
+    <title>webServer</title>
+  </head>
+  <body>
+    <div class="log-container"></div>
+    <div class="inputs">
+      <div id="text" contenteditable="true"></div>
+      <input type="button" value="Send" id="btn" />
+    </div>
+
+    <script defer>
+      const btn = document.querySelector("#btn");
+      const text = document.querySelector("#text");
+      let textValue = "";
+      let sock = new WebSocket("ws://192.168.0.116:8080");
+      sock.onopen = () => {
+        console.log("Socket Opened");
+      };
+      let name = prompt("What is your name");
+
+      setTimeout(() => {
+        sock.send(
+          JSON.stringify({
+            type: "name",
+            data: name,
+          })
+        );
+      }, 1000);
+
+      sock.onmessage = (e) => {
+        let result = JSON.parse(e.data);
+        const log = document.createElement("p");
+        log.setAttribute("id", "them");
+        log.textContent = `${result.name}: ${result.data}`;
+        document.querySelector(".log-container").append(log);
+      };
+
+      addEventListener("keyup", (e) => {
+        if (e.key === "Enter" && e.ctrlKey) {
+          textValue = text.textContent;
+
+          sock.send(
+            JSON.stringify({
+              type: "message",
+              data: textValue,
+            })
+          );
+
+          const log = document.createElement("p");
+          log.setAttribute("id", "you");
+          log.textContent = `You: ${textValue}`;
+          document.querySelector(".log-container").append(log);
+
+          text.textContent = "";
+          textValue = "";
+        }
+      });
+
+      btn.onclick = () => {
+        textValue = text.textContent;
+
+        sock.send(
+          JSON.stringify({
+            type: "message",
+            data: textValue,
+          })
+        );
+
+        const log = document.createElement("p");
+        log.setAttribute("id", "you");
+        log.textContent = `You: ${textValue}`;
+        document.querySelector(".log-container").append(log);
+
+        text.textContent = "";
+        textValue = "";
+      };
+    </script>
+  </body>
+</html>
